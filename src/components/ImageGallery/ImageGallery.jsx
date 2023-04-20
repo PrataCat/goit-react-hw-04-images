@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { Component } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { GalleryUl } from './ImageGallery.styled';
 import FetchQuery from '../../services/Api';
@@ -8,106 +8,88 @@ import ImageGalleryItem from '../ImageGalleryItem';
 import Button from '../Button';
 import Loader from '../Loader';
 
-class ImageGallery extends Component {
-  state = {
-    imageArr: [],
-    page: 1,
-    isLoading: false,
-    disabledBtn: false,
-    error: null,
+const ImageGallery = ({ keyWord }) => {
+  const [imageArr, setImageArr] = useState([]);
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [disabledBtn, setDisabledBtn] = useState(false);
+  const [errorMassege, setErrorMassege] = useState(null);
+  const [prevKeyWord, setPrevKeyWord] = useState('');
+
+  const pageUpdate = () => {
+    setPage(prevState => prevState + 1);
+    setPrevKeyWord(keyWord);
   };
 
-  componentDidUpdate(prevProps, prevState) {
-    const newKeyWord = this.props.keyWord;
-    const prevKeyWord = prevProps.keyWord;
-    const currPage = this.state.page;
-    const prevPage = prevState.page;
-
-    if (
-      (prevKeyWord !== newKeyWord && currPage === 1) ||
-      (prevKeyWord !== newKeyWord && currPage !== 1)
-    ) {
-      this.imageArrReset();
-      this.pageReset();
-      this.getImages();
+  useEffect(() => {
+    if (!keyWord) {
+      return;
     }
 
-    if (prevKeyWord === newKeyWord && currPage !== prevPage && currPage !== 1) {
-      this.getImages();
-    }
-  }
+    setIsLoading(true);
+    setDisabledBtn(false);
 
-  getImages = async () => {
-    this.isLoadingToggle();
-    this.setState({ disabledBtn: false });
-    try {
-      const data = await FetchQuery(this.props.keyWord, this.state.page);
+    const getImages = async () => {
+      try {
+        const data = await FetchQuery(keyWord, page);
 
-      if (data.length === 0) {
-        toast.info('There are no images for your request.');
-        this.imageArrReset();
-        this.pageReset();
-        this.isLoadingToggle();
-        return;
+        if (data.length === 0) {
+          toast.info('There are no images for your request.');
+          setImageArr([]);
+          setIsLoading(false);
+          return;
+        }
+
+        if (data.length === IMG_PER_PAGE) {
+          setDisabledBtn(true);
+        } else {
+          setDisabledBtn(false);
+        }
+
+        setImageArr(state => [...state, ...data]);
+      } catch (error) {
+        setImageArr([]);
+        setPage(1);
+        setPrevKeyWord('');
+        setDisabledBtn(false);
+        setErrorMassege(
+          'Ooops, something went wrong. Restart the application.'
+        );
       }
 
-      if (data.length === IMG_PER_PAGE) {
-        this.setState({ disabledBtn: true });
-      } else {
-        this.setState({ disabledBtn: false });
-      }
+      setIsLoading(false);
+    };
 
-      this.setState(({ imageArr }) => ({
-        imageArr: [...imageArr, ...data],
-      }));
-    } catch (error) {
-      this.imageArrReset();
-      this.pageReset();
-      this.setState({
-        disabledBtn: false,
-        error: 'Ooops, something went wrong. Restart the application.',
-      });
-
-      console.error();
+    if (prevKeyWord !== keyWord && page === 1) {
+      setImageArr([]);
+      getImages();
+      setPrevKeyWord(keyWord);
+      return;
     }
 
-    this.isLoadingToggle();
-  };
+    if (prevKeyWord !== keyWord && page !== 1) {
+      setPage(1);
+      return;
+    }
 
-  pageUpdate = () => {
-    this.setState(({ page }) => ({ page: page + 1 }));
-  };
+    if (prevKeyWord === keyWord && page !== 1) {
+      getImages();
+    }
+  }, [keyWord, page, prevKeyWord]);
 
-  imageArrReset = () => {
-    this.setState({ imageArr: [] });
-  };
-
-  pageReset = () => {
-    this.setState({ page: 1 });
-  };
-
-  isLoadingToggle = () => {
-    this.setState(({ isLoading }) => ({
-      isLoading: !isLoading,
-    }));
-  };
-
-  render() {
-    const { imageArr, error, isLoading, disabledBtn } = this.state;
-    return (
-      <>
-        <GalleryUl>
-          {imageArr.map(image => (
-            <ImageGalleryItem key={image.id} image={image} />
-          ))}
-        </GalleryUl>
-        {error && <h2>{error}</h2>}
-        {isLoading && <Loader />}
-        {disabledBtn && <Button onClickBtn={this.pageUpdate} />}
-      </>
-    );
-  }
-}
+  return (
+    <>
+      <GalleryUl>
+        {imageArr.map(image => (
+          <ImageGalleryItem key={image.id} image={image} />
+        ))}
+      </GalleryUl>
+      {errorMassege && <h2>{errorMassege}</h2>}
+      {isLoading && <Loader />}
+      {disabledBtn && <Button onClickBtn={pageUpdate} />}
+    </>
+  );
+};
 
 ImageGallery.propTypes = {
   data: PropTypes.array,

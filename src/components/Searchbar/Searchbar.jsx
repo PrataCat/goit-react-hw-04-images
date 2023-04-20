@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { Component } from 'react';
+import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { BsSearch } from 'react-icons/bs';
 import {
@@ -9,48 +9,44 @@ import {
   SearchButton,
 } from './Searchbar.styled';
 
-class Searchbar extends Component {
-  state = {
-    inputValue: '',
+const Searchbar = ({ setSearchValue }) => {
+  const [inputValue, setInputValue] = useState('');
+
+  const handleChange = e => {
+    setInputValue(e.target.value);
   };
 
-  handleChange = e => {
-    this.setState({ inputValue: e.target.value });
-  };
-
-  hendleSubmit = e => {
+  const hendleSubmit = e => {
     e.preventDefault();
 
-    if (this.state.inputValue.trim() === '') {
+    if (inputValue.trim() === '') {
       toast.info('Enter a keyword to search for a picture.');
       return;
     }
 
-    this.props.setSearchValue(this.state.inputValue.toLowerCase());
-    this.setState({ inputValue: '' });
+    setSearchValue(inputValue.toLowerCase());
+    setInputValue('');
   };
 
-  render() {
-    return (
-      <SearchbarWrap>
-        <SearchForm onSubmit={this.hendleSubmit}>
-          <SearchButton type="submit">
-            <BsSearch size={20} fill="black" />
-          </SearchButton>
+  return (
+    <SearchbarWrap>
+      <SearchForm onSubmit={hendleSubmit}>
+        <SearchButton type="submit">
+          <BsSearch size={20} fill="black" />
+        </SearchButton>
 
-          <SearchInput
-            type="text"
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-            value={this.state.inputValue}
-            onChange={this.handleChange}
-          />
-        </SearchForm>
-      </SearchbarWrap>
-    );
-  }
-}
+        <SearchInput
+          type="text"
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+          value={inputValue}
+          onChange={handleChange}
+        />
+      </SearchForm>
+    </SearchbarWrap>
+  );
+};
 
 Searchbar.propTypes = {
   setSearchValue: PropTypes.func,

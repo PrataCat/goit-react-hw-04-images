@@ -1,39 +1,36 @@
 import PropTypes from 'prop-types';
-import { Component } from 'react';
+import { useEffect } from 'react';
 import { ModalOverlay, ModalContent } from './Modal.styled';
 
-class Modal extends Component {
-  componentDidMount() {
-    window.addEventListener('keydown', this.hendleKeyDown);
-  }
+const Modal = ({ imgURL, alt, onClose }) => {
+  useEffect(() => {
+    const hendleKeyDown = e => {
+      if (e.code === 'Escape') {
+        onClose();
+      }
+    };
 
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.hendleKeyDown);
-  }
+    window.addEventListener('keydown', hendleKeyDown);
 
-  hendleKeyDown = e => {
-    if (e.code === 'Escape') {
-      this.props.onClose();
-    }
-  };
+    return () => {
+      window.removeEventListener('keydown', hendleKeyDown);
+    };
+  }, [onClose]);
 
-  hendleBackdropClick = e => {
+  const hendleBackdropClick = e => {
     if (e.currentTarget === e.target) {
-      this.props.onClose();
+      onClose();
     }
   };
 
-  render() {
-    const { imgURL, alt } = this.props;
-    return (
-      <ModalOverlay onClick={this.hendleBackdropClick}>
-        <ModalContent>
-          <img src={imgURL} alt={alt} />
-        </ModalContent>
-      </ModalOverlay>
-    );
-  }
-}
+  return (
+    <ModalOverlay onClick={hendleBackdropClick}>
+      <ModalContent>
+        <img src={imgURL} alt={alt} />
+      </ModalContent>
+    </ModalOverlay>
+  );
+};
 
 Modal.propTypes = {
   onClose: PropTypes.func,
